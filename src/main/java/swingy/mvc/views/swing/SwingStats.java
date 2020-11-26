@@ -36,7 +36,7 @@ public class SwingStats extends JPanel {
         }
 
         stats.get("name").setText("Name: ".concat(hero.getName() == null ? "" : hero.getName()));
-        stats.get("type").setText("Type: ".concat(hero.getType()));
+        stats.get("type").setText("Type: ".concat(hero.getRace()));
 
         if (hero.getPosition() != null) {
             stats.get("location").setText("Location: [".concat(String.valueOf(hero.getPosition().x)).concat(", ")
@@ -47,7 +47,7 @@ public class SwingStats extends JPanel {
         stats.get("exp").setText("Exp: " + hero.getExp() + "/" + hero.getNeccesaryExp());
         stats.get("attack").setText(String.valueOf(hero.getAttack()));
         stats.get("defense").setText(" " + hero.getDefense());
-        stats.get("hp").setText(" " + hero.getHP() + "/" + hero.getMaxHp());
+        stats.get("hp").setText(" " + hero.getHp() + "/" + hero.getMaxHp());
 
         if (hero.getArtifact() != null && !hero.getArtifact().getType().equals("")) {
             stats.get("artifact").setIcon(new ImageIcon(
@@ -70,7 +70,7 @@ public class SwingStats extends JPanel {
             name.setText("Name: " + hero.getName());
         }
 
-        JLabel type = new JLabel("Type: " + hero.getType());
+        JLabel type = new JLabel("Type: " + hero.getRace());
         type.setLocation(20, 55);
         type.setSize(150, 50);
         type.setFont(Resources.bigFont);
@@ -103,7 +103,7 @@ public class SwingStats extends JPanel {
         defense.setSize(200, 50);
         defense.setFont(Resources.bigFont);
 
-        JLabel hp = new JLabel( " " + hero.getHP() + "/" + this.hero.getMaxHp(), new ImageIcon(PATH_TO_ICONS.concat("hp.png")), JLabel.LEFT);
+        JLabel hp = new JLabel( " " + hero.getHp() + "/" + this.hero.getMaxHp(), new ImageIcon(PATH_TO_ICONS.concat("hp.png")), JLabel.LEFT);
         hp.setLocation(15, 370);
         hp.setSize(320, 50);
         hp.setFont(Resources.bigFont);

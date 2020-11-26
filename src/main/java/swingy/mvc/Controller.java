@@ -1,6 +1,9 @@
 package swingy.mvc;
 
-import swingy.bd.DataBase;
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import swingy.database.DataManager;
 import swingy.mvc.models.Artifact;
 import swingy.mvc.models.Enemy;
 import swingy.mvc.models.EnemyBuilder;
@@ -14,6 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
+@Component
 public class Controller {
     private IView currentGui;
 
@@ -21,15 +25,18 @@ public class Controller {
     private int sizeMap = 0;
     private ArrayList<Enemy> enemies;
     private Random rand;
+    @Getter
+    private final DataManager dataManager;
 
-    public Controller() {
+    @Autowired
+    public Controller(DataManager dataManager) {
         enemies = new ArrayList<>();
         rand = new Random();
+        this.dataManager = dataManager;
     }
 
-    public  void    startGame(String argument) throws Exception
-    {
-        if ( !argument.equals("gui") && !argument.equals("console") )
+    public void startGame(String argument) throws Exception {
+        if (!argument.equals("gui") && !argument.equals("console"))
             throw new IOException("bad argument [gui or console]");
         this.changeGui(argument);
 
@@ -42,8 +49,7 @@ public class Controller {
         this.currentGui.drawGameObjects();
     }
 
-    public void    keyPressed(int key)
-    {
+    public void keyPressed(int key) {
         this.handleKey(key);
         this.handleCollisions();
 
@@ -54,35 +60,37 @@ public class Controller {
             this.currentGui.scrollPositionManager();
     }
 
-    public void    saveHero()
-    {
-        if (currentGui.simpleDialog("Save your hero ?"))
-            DataBase.getDb().updateHero(this.hero);
+    public void saveHero() {
+        if (currentGui.askYesOrNoQuestion("Save your hero ?")) {
+            dataManager.updateHero(this.hero);
+        }
     }
 
-    private void    handleKey(int key)
-    {
-        switch (key)
-        {
+    private void handleKey(int key) {
+        switch (key) {
             case 37:
                 if (this.hero.getPosition().x - 1 >= 0)
                     this.hero.move(-1, 0);
                 else
-                    key = -1; break;
+                    key = -1;
+                break;
             case 38:
                 if (this.hero.getPosition().y - 1 >= 0)
                     this.hero.move(0, -1);
-                else key = -1; break;
+                else key = -1;
+                break;
 
             case 39:
                 if (this.hero.getPosition().x + 1 < this.sizeMap)
                     this.hero.move(1, 0);
-                else key = -1; break;
+                else key = -1;
+                break;
 
             case 40:
                 if (this.hero.getPosition().y + 1 < this.sizeMap)
                     this.hero.move(0, 1);
-                else key = -1; break;
+                else key = -1;
+                break;
             case -2:
                 try {
                     String type = currentGui.get_Type().equals("gui") ? "console" : "gui";
@@ -94,120 +102,97 @@ public class Controller {
                 break;
         }
 
-        if (key == -1)
-        {
-            if ( currentGui.simpleDialog("End of map, start a new game?") )
+        if (key == -1) {
+            if (currentGui.askYesOrNoQuestion("This map ended,do you start a new map?"))
                 this.initNewGame();
-            else
-            {
+            else {
                 this.saveHero();
                 System.exit(0);
             }
         }
     }
 
-    private void    handleCollisions()
-    {
+    private void handleCollisions() {
         for (int i = 0; i < this.enemies.size(); i++)
-            if ( this.enemies.get(i).getPosition().equals( this.hero.getPosition() ) )
+            if (this.enemies.get(i).getPosition().equals(this.hero.getPosition()))
                 this.manageBattle(this.enemies.get(i));
     }
 
-    private void    initNewGame()
-    {
-        /* Hero initialization */
-
-        this.hero.getPosition().setLocation( sizeMap >> 1, sizeMap >> 1);
-        this.hero.setHP( hero.getMaxHp() );
-
-        /* Enemies initialization */
-
+    private void initNewGame() {
+        this.hero.getPosition().setLocation(sizeMap >> 1, sizeMap >> 1);
+        this.hero.setHP(hero.getMaxHp());
         this.dropEnemies();
     }
 
-    private void    manageBattle(Enemy enemy)
-    {
+    private void manageBattle(Enemy enemy) {
         Point enemyPos = enemy.getPosition();
 
         this.currentGui.addLog("You met an opponent:\n    hp: " + enemy.getHp() + "\n    attack: "
                 + enemy.getAttack() + "\n    defense: " + enemy.getDefense());
 
-        if ( currentGui.simpleDialog("Do you want a battle ?") )
+        if (currentGui.askYesOrNoQuestion("Do you want a battle ?"))
             this.battleAlgorithm(enemy);
-        else
-        {
-            if ( rand.nextInt(2) % 2 == 0 ) {
+        else {
+            if (rand.nextInt(2) % 2 == 0) {
                 this.hero.setPosition(new Point(this.hero.getOldPosition()));
                 this.currentGui.addLog("You are lucky to escape");
-            }
-            else
-            {
+            } else {
                 this.currentGui.addLog("Run away failed");
                 this.battleAlgorithm(enemy);
             }
         }
 
-        if ( !enemyPos.equals(hero.getPosition()) )
-            return ;
+        if (!enemyPos.equals(hero.getPosition()))
+            return;
 
         if (enemy.getHp() <= 0) {
-            this.hero.setExp( hero.getExp() + ( (enemy.getAttack() + enemy.getDefense()) << 3 ) );
-            this.currentGui.addLog("Opponent killed ! Raised " + (enemy.getAttack() + enemy.getDefense() << 3) + " experience !" );
+            this.hero.setExp(hero.getExp() + ((enemy.getAttack() + enemy.getDefense()) << 3));
+            this.currentGui.addLog("Opponent killed ! Raised " + (enemy.getAttack() + enemy.getDefense() << 3) + " experience !");
             this.enemies.remove(enemy);
             this.manageMyHero(enemy);
-        }
-        else
+        } else
             hero.setPosition(new Point(hero.getOldPosition()));
     }
 
-    private void    battleAlgorithm(Enemy enemy)
-    {
-        if ( rand.nextInt(7) == 6 )
-        {
+    private void battleAlgorithm(Enemy enemy) {
+        if (rand.nextInt(7) == 6) {
             enemy.setHp(0);
             this.currentGui.addLog("Critical hit !!!");
-        }
-        else
-        {
-            this.hero.setHP( hero.getHP() - (enemy.getAttack() << 2) + hero.getFinalDefense() );
-            if ( this.checkDeath() )
+        } else {
+            this.hero.setHP(hero.getHp() - (enemy.getAttack() << 2) + hero.getFinalDefense());
+            if (this.checkDeath())
                 return;
 
-            enemy.setHp( enemy.getHp() - hero.getFinalAttack() + enemy.getDefense() );
+            enemy.setHp(enemy.getHp() - hero.getFinalAttack() + enemy.getDefense());
 
             int raisedDamage = (enemy.getAttack() << 2) - hero.getFinalDefense();
 
-            this.currentGui.addLog("You caused " + ( hero.getFinalAttack() - enemy.getDefense() )
-                    + " damage to the opponent !\n" + ( raisedDamage < 0 ? " Blocked up all" : " Raised " + raisedDamage ) + " damage." );
+            this.currentGui.addLog("You caused " + (hero.getFinalAttack() - enemy.getDefense())
+                    + " damage to the opponent !\n" + (raisedDamage < 0 ? " Blocked up all" : " Raised " + raisedDamage) + " damage.");
         }
     }
 
-    private void    manageMyHero(Enemy enemy)
-    {
-        if ( hero.getExp() >= hero.getNeccesaryExp() )
-        {
+    private void manageMyHero(Enemy enemy) {
+        if (hero.getExp() >= hero.getNeccesaryExp()) {
             currentGui.addLog("Level up ! Skills increased !");
-            hero.setMaxHp( hero.getMaxHp() + (4 << hero.getLevel()) );
-            hero.setHP( hero.getMaxHp() );
-            hero.setAttack( hero.getAttack() + (hero.getLevel() << 2) );
-            hero.setDefense( hero.getDefense() + (hero.getLevel() << 1) );
-            hero.setLevel( hero.getLevel() + 1 );
+            hero.setMaxHp(hero.getMaxHp() + (4 << hero.getLevel()));
+            hero.setHP(hero.getMaxHp());
+            hero.setAttack(hero.getAttack() + (hero.getLevel() << 2));
+            hero.setDefense(hero.getDefense() + (hero.getLevel() << 1));
+            hero.setLevel(hero.getLevel() + 1);
             sizeMap = (hero.getLevel() - 1) * 5 + 10 - (hero.getLevel() % 2);
             this.dropEnemies();
         }
         this.manageBonuses(enemy);
     }
 
-    private boolean   checkDeath()
-    {
-        if ( hero.getHP() <= 0 )
-        {
+    private boolean checkDeath() {
+        if (hero.getHp() <= 0) {
             this.currentGui.updateData();
 
-            if (currentGui.simpleDialog("You died, respawn at center of map ?"))
+            if (currentGui.askYesOrNoQuestion("You died, respawn at center of map ?"))
                 this.initNewGame();
-            else
-            {
+            else {
                 this.saveHero();
                 System.exit(0);
             }
@@ -217,22 +202,18 @@ public class Controller {
         return false;
     }
 
-    private void    manageBonuses(Enemy enemy)
-    {
-        if (rand.nextInt(3) == 2)
-        {
+    private void manageBonuses(Enemy enemy) {
+        if (rand.nextInt(3) == 2) {
             if (rand.nextInt(2) == 0) {
                 int up = rand.nextInt(30) + 5;
-                hero.setHP(hero.getHP() + up);
+                hero.setHP(hero.getHp() + up);
                 currentGui.addLog("Found health elixir + " + up + " hp !");
-            }
-            else
+            } else
                 this.manageArtifacts(enemy);
         }
     }
 
-    private void    dropEnemies()
-    {
+    private void dropEnemies() {
         this.enemies.clear();
 
         EnemyBuilder enemyBuilder = new EnemyBuilder();
@@ -241,19 +222,17 @@ public class Controller {
             enemies.add(enemyBuilder.buildEnemy(sizeMap, enemies, hero));
     }
 
-    private void  manageArtifacts(Enemy enemy)
-    {
+    private void manageArtifacts(Enemy enemy) {
         String artifact = rand.nextInt(2) == 0 ? "attack" : "defense";
-        int    value = (( artifact.equals("attack") ? enemy.getAttack() : enemy.getDefense() ) >> 1) + 1;
+        int value = ((artifact.equals("attack") ? enemy.getAttack() : enemy.getDefense()) >> 1) + 1;
 
-        if ( currentGui.simpleDialog("Found " + artifact + " artifact (" + value + ") pick it up ?") ) {
-            hero.setArtifact( new Artifact(artifact, value) );
+        if (currentGui.askYesOrNoQuestion("Found " + artifact + " artifact (" + value + ") pick it up ?")) {
+            hero.setArtifact(new Artifact(artifact, value));
             currentGui.addLog("New artifact equipped");
         }
     }
 
-    private void    changeGui(String guiName)
-    {
+    private void changeGui(String guiName) {
         this.currentGui = guiName.equals("gui") ? new SwingView(this) : new ConsoleView(this);
     }
 

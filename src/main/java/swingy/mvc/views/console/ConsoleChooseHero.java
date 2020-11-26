@@ -1,175 +1,173 @@
 package swingy.mvc.views.console;
 
-import swingy.bd.DataBase;
+import swingy.database.DataManager;
 import swingy.mvc.models.Hero;
-import swingy.mvc.models.heroBuilder.DirectorHero;
+import swingy.mvc.models.factory.HeroFactory;
+import swingy.utils.ConsolePrinter;
 
 import java.util.List;
 import java.util.Scanner;
 
-public class ConsoleChooseHero
-{
-    private DirectorHero builder;
-    private List<String> names;
-    private Hero       hero;
-    private Scanner      scanner;
+import static swingy.utils.Constants.*;
+import static swingy.utils.Utils.getIntegerFromInput;
+import static swingy.utils.Utils.validateHero;
 
-    public ConsoleChooseHero(Scanner scanner)
-    {
-        this.builder = new DirectorHero();
+
+public class ConsoleChooseHero {
+    private List<String> oldHeroesNames;
+    private Hero hero;
+    private final Scanner scanner;
+    private final DataManager dataManager;
+
+    public ConsoleChooseHero(Scanner scanner, DataManager dataManager) {
         this.hero = null;
         this.scanner = scanner;
+        this.dataManager = dataManager;
     }
 
-    public  Hero  getHero() throws Exception
-    {
+    public Hero getHero() {
         int value;
 
-        DataBase.getDb().connectDb();
-        names = DataBase.getDb().getNames();
+        oldHeroesNames = dataManager.getHeroesNames();
 
-        while (hero == null)
-        {
-            System.out.println("0) Exit\n1) Select previous created hero\n2) Create new hero");
+        while (hero == null) {
+            ConsolePrinter.getPrinter()
+                    .setNumber(0).setMessage("exit")
+                    .setNumber(1).setMessage("select your old hero")
+                    .setNumber(2).setMessage("create new hero")
+                    .printMessage();
 
-            value = this.getNiceValue();
-
-            switch (value)
-            {
-                case 0: System.exit(0);
-                case 1: this.oldHeroesManager();    break;
-                case 2: this.heroCreator();         break;
+            value = getIntegerFromInput(scanner);
+            switch (value) {
+                case 0:
+                    System.exit(0);
+                case 1:
+                    this.getOldHeroes();
+                    break;
+                case 2:
+                    this.createNewHero();
+                    break;
             }
         }
 
         return hero;
     }
 
-    private void    oldHeroesManager() throws Exception
-    {
-        int          index;
-        int          value;
+    private void getOldHeroes() {
+        while (true) {
 
-        while (true)
-        {
-            index = 0;
-
-            if (names.size() == 0) {
-                System.out.println("You haven't heroes, create them.");
+            if (oldHeroesNames.size() == 0) {
+                System.out.println("It looks like you have no heroes, feel free to create one!");
                 return;
             }
 
-            System.out.println("0) come back");
-            for (String name : names)
-                System.out.println(++index + ") " + name);
+            int index = 0;
+            ConsolePrinter consolePrinter = ConsolePrinter.getPrinter()
+                    .setNumber(0).setMessage("go back");
+            for (String heroName : oldHeroesNames) {
+                consolePrinter.setNumber(++index).setMessage("play as ").setMessage(heroName);
+            }
+            consolePrinter.printMessage();
 
-            if ( (value = this.getNiceValue()) == 0 )
-                break;
-            else if ( value <= index)
-            {
-                System.out.println(DataBase.getDb().getHero(names.get(value - 1)).getFormattedInfo());
-                System.out.println("\nMake choice: 1) Select   2) Remove   3) Cancel");
+            int value;
+            if ((value = getIntegerFromInput(scanner)) == 0) {
+                return;
+            } else if (value <= index) {
+                Hero possiblyPickedHero = dataManager.getHero(oldHeroesNames.get(value - 1));
+                System.out.println(possiblyPickedHero.toString());
+                ConsolePrinter.getPrinter()
+                        .setNumber(1).setMessage("play this hero")
+                        .setNumber(2).setMessage("remove this hero")
+                        .setNumber(3).setMessage("go back")
+                        .printMessage();
 
-                int choice = this.getNiceValue();
-
-                if (choice == 1)
-                    hero = DataBase.getDb().getHero(names.get(value - 1));
-                else if (choice == 2)
-                {
-                    try
-                    {
-                        DataBase.getDb().remove( names.get(value - 1) );
-                        names.remove(value - 1);
-                    }
-                    catch (Exception e) {
+                int typedInteger = getIntegerFromInput(scanner);
+                if (typedInteger == 1) {
+                    hero = possiblyPickedHero;
+                } else if (typedInteger == 2) {
+                    try {
+                        dataManager.removeHero(possiblyPickedHero.getName());
+                        oldHeroesNames.remove(value - 1);
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
-                if (choice == 1 || choice == 3)
-                    break;
+                if (typedInteger == 1 || typedInteger == 3)
+                    return;
             }
         }
     }
 
-    private void    heroCreator()
-    {
-        int value;
+    private void createNewHero() {
+        while (true) {
+            ConsolePrinter.getPrinter()
+                    .setNumber(0).setMessage("go back")
+                    .setNumber(1).setMessage("create Human")
+                    .setNumber(2).setMessage("create Ork")
+                    .setNumber(3).setMessage("create Elf")
+                    .printMessage();
 
-        while (true)
-        {
-            System.out.println("0) come back\n1) Human\n2) Ork\n3) Elf");
+            int typedInteger;
+            if ((typedInteger = getIntegerFromInput(scanner)) == 0) {
+                return;
+            }
 
-            if ( (value = this.getNiceValue()) == 0 )
-                break;
-            if ( (value > 0 && value < 4) )
-            {
-                switch (value)
-                {
-                    case 1: this.tryCreateNewHero("Human"); break;
-                    case 2: this.tryCreateNewHero("Ork");   break;
-                    case 3: this.tryCreateNewHero("Elf");   break;
+            if ((typedInteger > 0 && typedInteger < 4)) {
+                switch (typedInteger) {
+                    case HUMAN:
+                        this.createNewHero(races[HUMAN - 1]); // -1 to match array index from 0
+                        break;
+                    case ORK:
+                        this.createNewHero(races[ORK - 1]);
+                        break;
+                    case ELF:
+                        this.createNewHero(races[ELF - 1]);
+                        break;
                 }
             }
         }
     }
 
-    private void    tryCreateNewHero(String type)
-    {
-        String nameHero = "";
-        String error = "";
-        Hero newHero = builder.buildbyType(type);
+    private void createNewHero(String heroRace) {
+        Hero newHero = HeroFactory.createNewHero(heroRace);
+        ConsolePrinter.getPrinter()
+                .setNumber(1).setMessage("create this hero")
+                .setNumber(2).setMessage("cancel creation")
+                .setMessage(newHero.toString())
+                .printMessage();
 
-        System.out.println(newHero.getFormattedInfo() + "\nCreate him ? 1) Yes   2) No");
+        int typedInteger = getIntegerFromInput(scanner);
+        if (typedInteger == 1) {
+            while (true) {
+                System.out.print("Enter a name for your hero: ");
+                String heroName = scanner.nextLine();
+                newHero.setName(heroName);
 
-        int value = this.getNiceValue();
+                if (!validateHero(newHero)) {
+                    continue;
+                }
 
-        if (value == 2)
-            return;
-        else
-        {
-            while (error != null)
-            {
-                System.out.print("Enter name: ");
-                while (nameHero.equals(""))
-                    nameHero = scanner.nextLine();
+                boolean nameIsNotUsed = true;
+                for (String name : oldHeroesNames) {
+                    if (name.equals(heroName)) {
+                        System.err.println("Use another name, this name is already used.");
+                        nameIsNotUsed = false;
+                        break;
+                    }
+                }
 
-                error = builder.trySetName(newHero, nameHero);
-                for (String name : names)
-                    if (name.equals(nameHero))
-                        error = "Hero with that name already created";
-
-                if (error != null)
-                    System.err.println(error);
-
-                nameHero = "";
+                if (nameIsNotUsed) {
+                    break;
+                }
             }
 
-            try
-            {
-                DataBase.getDb().addNewHero(newHero);
-                this.names.add(newHero.getName());
-            }
-            catch (Exception e) {
+            try {
+                dataManager.addNewHero(newHero);
+                this.oldHeroesNames.add(newHero.getName());
+                System.out.println("Your hero was created! You can go back and play it.");
+            } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    private int    getNiceValue()
-    {
-        String str;
-
-        while (true)
-        {
-            str = "";
-
-            while (str.equals(""))
-                str = scanner.nextLine();
-
-            if (!str.matches("^[0-9]+"))
-                System.err.println("Enter nice value !");
-            else
-                return Integer.parseInt(str);
         }
     }
 }

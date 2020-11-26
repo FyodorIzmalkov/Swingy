@@ -64,7 +64,7 @@ public class SwingView extends JFrame implements IView {
 
     @Override
     public void ChooseHero() {
-        this.controller.setHero(new SwingChooseHero(panel).ChooseHero());
+        this.controller.setHero(new SwingChooseHero(panel, controller.getDataManager()).ChooseHero());
     }
 
     @Override
@@ -108,7 +108,7 @@ public class SwingView extends JFrame implements IView {
     }
 
     @Override
-    public boolean simpleDialog(String message) {
+    public boolean askYesOrNoQuestion(String message) {
         int dialogButton = JOptionPane.YES_NO_OPTION;
         int dialogResult = JOptionPane.showConfirmDialog(this, message, "You have a choice", dialogButton);
 

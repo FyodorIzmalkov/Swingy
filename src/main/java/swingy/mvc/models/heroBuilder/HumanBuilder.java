@@ -4,7 +4,7 @@ import swingy.mvc.models.*;
 
 public class HumanBuilder implements IBuilder {
     public void buildDefaultStats(Hero hero) {
-        hero.setType("human");
+        hero.setRace("human");
         hero.setLevel(1);
         hero.setExp(0);
         hero.setAttack(10);

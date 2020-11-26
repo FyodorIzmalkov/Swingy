@@ -4,7 +4,7 @@ import swingy.mvc.models.Hero;
 
 public class OrkBuilder implements IBuilder {
     public void buildDefaultStats(Hero hero) {
-        hero.setType("ork");
+        hero.setRace("ork");
         hero.setLevel(1);
         hero.setExp(0);
         hero.setAttack(15);

@@ -1,6 +1,6 @@
 package swingy.mvc.views.swing;
 
-import swingy.bd.DataBase;
+import swingy.database.DataManager;
 import swingy.mvc.models.Hero;
 import swingy.mvc.models.heroBuilder.DirectorHero;
 import swingy.resources.Resources;
@@ -12,26 +12,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static swingy.utils.Constants.races;
+
 public class SwingChooseHero {
-    private SwingPanel              panel;
-    private JTextField              inputName;
-    private JComboBox               heroTypes;
-    private JComboBox               oldHeroes;
-    private SwingStats              stats;
+    private SwingPanel panel;
+    private JTextField inputName = new JTextField("", 5);;
+    private JComboBox<String> heroRaces = new JComboBox<>(races);
+    private JComboBox<String> createdHeroes = new JComboBox<>();
+    private SwingStats stats;
     private Hero selectedHero;
-    private DirectorHero            builder;
+    private DirectorHero builder = new DirectorHero();;
 
-    private Map<String, JLabel>     labels;
-    private Map<String, JButton>    buttons;
+    private Map<String, JLabel> labels;
+    private Map<String, JButton> buttons;
+    private final DataManager dataManager;
 
-    public SwingChooseHero(SwingPanel panel) {
+    public SwingChooseHero(SwingPanel panel, DataManager dataManager) {
         this.panel = panel;
-        String[] nameTypes = {"Human", "Ork", "Elf"};
-
-        inputName = new JTextField("", 5);
-        heroTypes = new JComboBox(nameTypes);
-        oldHeroes = new JComboBox();
-        builder = new DirectorHero();
+        this.dataManager = dataManager;
 
         labels = new HashMap<>();
         labels.put("Name", new JLabel("Name:"));
@@ -44,7 +42,6 @@ public class SwingChooseHero {
     }
 
     public Hero ChooseHero() {
-        DataBase.getDb().connectDb();
 
         prepareObjects();
         addObjOnFrame();
@@ -87,43 +84,41 @@ public class SwingChooseHero {
     }
 
     private void prepareBoxes() {
-        heroTypes.setLocation(898, 175);
-        heroTypes.setSize(160, 50);
-        heroTypes.addItemListener ((ItemEvent e) -> {
-                    this.stats.setHero(builder.buildbyType(heroTypes.getSelectedItem().toString()));
+        heroRaces.setLocation(898, 175);
+        heroRaces.setSize(160, 50);
+        heroRaces.addItemListener((ItemEvent e) -> {
+                    this.stats.setHero(builder.buildbyType(heroRaces.getSelectedItem().toString()));
                     this.stats.updateData();
                 }
         );
 
-        /* Box old heroes */
-
-        List<String> names = DataBase.getDb().getNames();
+        List<String> names = dataManager.getHeroesNames();
         for (String name : names) {
-            oldHeroes.addItem(name);
+            createdHeroes.addItem(name);
         }
-        oldHeroes.setLocation(100, 175);
-        oldHeroes.setSize(160, 50);
-        oldHeroes.addItemListener((ItemEvent e) -> {
+
+        createdHeroes.setLocation(100, 175);
+        createdHeroes.setSize(160, 50);
+        createdHeroes.addItemListener((ItemEvent e) -> {
             try {
-                Hero newHero = DataBase.getDb().getHero( (String)oldHeroes.getSelectedItem() );
-                if (newHero == null) {
-                    newHero = builder.buildbyType(heroTypes.getSelectedItem().toString());
+                Hero pickedHero = dataManager.getHero((String) createdHeroes.getSelectedItem());
+                if (pickedHero == null) {
+                    pickedHero = builder.buildbyType(heroRaces.getSelectedItem().toString());
                 }
 
-                stats.setHero(newHero);
+                stats.setHero(pickedHero);
                 stats.updateData();
-            }
-            catch (Exception e1) {
+            } catch (Exception e1) {
                 e1.printStackTrace();
             }
         });
 
-        stats = new SwingStats(!names.isEmpty() ? DataBase.getDb().getHero(oldHeroes.getSelectedItem().toString()) :
-                builder.buildbyType(heroTypes.getSelectedItem().toString()));
+        stats = new SwingStats(!names.isEmpty() ? dataManager.getHero(createdHeroes.getSelectedItem().toString()) :
+                builder.buildbyType(heroRaces.getSelectedItem().toString()));
         stats.setLocation(400, 400);
     }
 
-    private void    prepareButtons() {
+    private void prepareButtons() {
         buttons.get("create").setLocation(875, 250);
         buttons.get("create").setSize(210, 25);
         buttons.get("create").addActionListener((ActionEvent e) -> tryCreateNewHero());
@@ -132,10 +127,9 @@ public class SwingChooseHero {
         buttons.get("select").setLocation(75, 250);
         buttons.get("select").setSize(100, 25);
         buttons.get("select").addActionListener((ActionEvent e) -> {
-            if (oldHeroes.getItemCount() == 0) {
+            if (createdHeroes.getItemCount() == 0) {
                 JOptionPane.showMessageDialog(panel, "You haven't any hero, create him");
-            }
-            else {
+            } else {
                 selectHero();
                 panel.removeAll();
             }
@@ -147,12 +141,12 @@ public class SwingChooseHero {
         buttons.get("remove").setFont(Resources.font3);
     }
 
-    private void    addObjOnFrame() {
+    private void addObjOnFrame() {
         panel.add(labels.get("Name"));
         panel.add(labels.get("Old"));
         panel.add(inputName);
-        panel.add(heroTypes);
-        panel.add(oldHeroes);
+        panel.add(heroRaces);
+        panel.add(createdHeroes);
         panel.add(stats);
         panel.add(buttons.get("create"));
         panel.add(buttons.get("select"));
@@ -162,8 +156,8 @@ public class SwingChooseHero {
         labels.get("Name").repaint();
         labels.get("Old").repaint();
         inputName.repaint();
-        heroTypes.repaint();
-        oldHeroes.repaint();
+        heroRaces.repaint();
+        createdHeroes.repaint();
         stats.repaint();
         stats.updateData();
         buttons.get("create").repaint();
@@ -172,33 +166,32 @@ public class SwingChooseHero {
     }
 
     private void tryCreateNewHero() {
-        Hero newHero = builder.buildbyType(heroTypes.getSelectedItem().toString());
+        Hero newHero = builder.buildbyType(heroRaces.getSelectedItem().toString());
         String error = builder.trySetName(newHero, inputName.getText());
 
-        for (int i = 0; i < oldHeroes.getItemCount(); ++i) {
-            if (oldHeroes.getItemAt(i).equals(inputName.getText())) {
+        for (int i = 0; i < createdHeroes.getItemCount(); ++i) {
+            if (createdHeroes.getItemAt(i).equals(inputName.getText())) {
                 error = "Hero with that name already created";
             }
         }
 
         if (!error.isEmpty()) {
             JOptionPane.showMessageDialog(panel, error);
-        }
-        else {
-            DataBase.getDb().addNewHero(newHero);
-            oldHeroes.addItem(inputName.getText());
+        } else {
+            dataManager.addNewHero(newHero);
+            createdHeroes.addItem(inputName.getText());
             inputName.setText("");
         }
     }
 
     private void tryRemoveHero() {
-        Object heroToRemoving = oldHeroes.getSelectedItem();
+        Object heroToRemoving = createdHeroes.getSelectedItem();
 
-        DataBase.getDb().remove(heroToRemoving.toString());
-        oldHeroes.removeItem(heroToRemoving);
+        dataManager.removeHero(heroToRemoving.toString());
+        createdHeroes.removeItem(heroToRemoving);
     }
 
     private void selectHero() {
-        this.selectedHero = DataBase.getDb().getHero(oldHeroes.getSelectedItem().toString());
+        this.selectedHero = dataManager.getHero(createdHeroes.getSelectedItem().toString());
     }
 }

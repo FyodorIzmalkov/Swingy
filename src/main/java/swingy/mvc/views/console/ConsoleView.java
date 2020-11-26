@@ -1,5 +1,6 @@
 package swingy.mvc.views.console;
 
+import org.springframework.stereotype.Component;
 import swingy.mvc.Controller;
 import swingy.mvc.models.Enemy;
 import swingy.mvc.views.IView;
@@ -8,8 +9,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
 
+import static swingy.utils.Constants.CONSOLE_CONTROLS;
+
+@Component
 public class ConsoleView implements IView {
-    private static final String TEXT_MAKE_TRAVEL = "\n0) Exit\n\n     1) North\n2) West     3) East\n     4) South\n\"gui\" - for gui-mode";
 
     private static final Scanner scanner = new Scanner(System.in);
 
@@ -25,7 +28,7 @@ public class ConsoleView implements IView {
     @Override
     public void ChooseHero() {
         try {
-            controller.setHero(new ConsoleChooseHero(scanner).getHero());
+            controller.setHero(new ConsoleChooseHero(scanner, controller.getDataManager()).getHero());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -34,7 +37,8 @@ public class ConsoleView implements IView {
     @Override
     public void drawGameObjects() {
         drawMap();
-        System.out.println(TEXT_MAKE_TRAVEL);
+
+        System.out.println(CONSOLE_CONTROLS);
         controller.keyPressed(getNiceValue());
     }
 
@@ -54,8 +58,8 @@ public class ConsoleView implements IView {
     }
 
     @Override
-    public boolean simpleDialog(String message) {
-        System.out.println(message.concat("\n 1) Yes     2) No"));
+    public boolean askYesOrNoQuestion(String message) {
+        System.out.println(message + "\n 1 - Yes     2 - No");
 
         int key = getNiceValue();
 
@@ -154,7 +158,7 @@ public class ConsoleView implements IView {
 
         switch (numStat) {
             case 0: stat.append("Name: ").append(controller.getHero().getName());      break;
-            case 1: stat.append("Type: ").append(controller.getHero().getType());      break;
+            case 1: stat.append("Race: ").append(controller.getHero().getRace());      break;
             case 2: stat.append("Level: ").append(controller.getHero().getLevel());    break;
             case 3: stat.append("Location [").append(controller.getHero().getPosition().x).append(", ")
                     .append(controller.getHero().getPosition().y).append("]");         break;
@@ -162,7 +166,7 @@ public class ConsoleView implements IView {
                     .append(controller.getHero().getNeccesaryExp());                   break;
             case 5: stat.append("Attack: ").append(controller.getHero().getAttack());  break;
             case 6: stat.append("Defense: ").append(controller.getHero().getDefense());break;
-            case 7: stat.append("Hp: ").append(controller.getHero().getHP()).append("/")
+            case 7: stat.append("Hp: ").append(controller.getHero().getHp()).append("/")
                     .append(controller.getHero().getMaxHp());                          break;
             case 8:
                 if (controller.getHero().getArtifact() != null && !controller.getHero().getArtifact().getType().isEmpty()) {

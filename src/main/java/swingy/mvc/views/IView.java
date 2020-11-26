@@ -9,7 +9,7 @@ public interface IView
     void    updateData();
     void    addLog(String text);
 
-    boolean simpleDialog(String message);
+    boolean askYesOrNoQuestion(String message);
     String  get_Type();
     void    close();
 }

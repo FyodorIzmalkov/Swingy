@@ -41,7 +41,7 @@ public class SwingMapPanel extends JPanel {
 
     private void drawHero(Graphics2D g2) {
         Image img = getToolkit().getImage(Resources.findPathToResources().concat("characters/")
-                .concat(controller.getHero().getType()).concat(".png"));
+                .concat(controller.getHero().getRace()).concat(".png"));
 
         prepareImage(img, this);
 

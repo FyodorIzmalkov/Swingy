@@ -1,8 +1,7 @@
 package swingy.mvc.views.swing;
 
 import swingy.mvc.Controller;
-import swingy.mvc.views.IView;
-import swingy.resources.Resources;
+import swingy.mvc.views.InterfaceView;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,154 +10,129 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-public class SwingView extends JFrame implements IView {
-    private Resources resources;
-    private Controller controller;
-    private KeyAdapter keySupporter;
-    private SwingPanel panel;
-    private SwingMapPanel map;
-    private JScrollPane scrollMap;
+import static swingy.utils.Constants.*;
+
+
+public class SwingView extends JFrame implements InterfaceView {
+    private final SwingHeroPicker swingHeroPicker;
+    private final MainPanel mainPanel;
+    private final Controller controller;
+    private JScrollPane mapWithScroll;
     private JScrollPane scrollGameLog;
+    private GuiHeroStats stats;
+    private GuiGameLog gameLog;
 
-    private int                     squareSize;
-
-    private SwingStats              stats;
-    private SwingGameLog            gameLog;
-
-    private String                  type;
-
-    public SwingView(Controller controller) {
+    public SwingView(Controller controller, SwingHeroPicker swingHeroPicker, MainPanel mainPanel) {
         super("Swingy");
 
-        if (resources == null) {
-            resources = new Resources();
-        }
+        this.controller = controller;
+        this.swingHeroPicker = swingHeroPicker;
+        this.mainPanel = mainPanel;
 
-        this.setBounds(500, 250, 1200, 1000);
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setResizable(false);
-        this.setLayout(null);
-        this.addWindowListener(new WindowAdapter() {
+        setBounds(500, 250, MAIN_WIDTH, MAIN_HEIGHT);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setResizable(false);
+        setLayout(null);
+        setVisible(true);
+        setFocusable(true);
+        setContentPane(this.mainPanel);
+        KeyAdapter keySupporter = new KeySupporter();
+        addKeyListener(keySupporter);
+        addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 if (controller.getHero() != null) {
-                    controller.saveHero();
+                    controller.saveHeroProgress();
                 }
             }
         });
-
-        this.controller = controller;
-        this.keySupporter = new KeySupporter();
-        this.setVisible(true);
-        this.setFocusable(true);
-
-        this.panel = new SwingPanel();
-        this.squareSize = 70;
-
-        setContentPane(panel);
-
-        this.type = "gui";
-        this.addKeyListener(this.keySupporter);
-    }
-
-    /***************** Implementing of Interface IView **********************/
-
-    @Override
-    public void ChooseHero() {
-        this.controller.setHero(new SwingChooseHero(panel, controller.getDataManager()).ChooseHero());
     }
 
     @Override
-    public void drawGameObjects()
-    {
+    public void pickHero() {
+        controller.setHero(swingHeroPicker.pickHero());
+    }
+
+    @Override
+    public void draw() {
         this.initScrolls();
-        stats = new SwingStats(controller.getHero());
-        stats.updateData();
+        stats = new GuiHeroStats(controller.getHero());
+        stats.updateStats();
 
-        panel.add(scrollGameLog);
-        panel.add(stats);
-        panel.add(scrollMap);
+        mainPanel.add(scrollGameLog);
+        mainPanel.add(stats);
+        mainPanel.add(mapWithScroll);
 
-        panel.revalidate();
-        panel.repaint();
+        mainPanel.revalidate();
+        mainPanel.repaint();
     }
 
     @Override
-    public void viewRepaint()
-    {
-        panel.repaint();
+    public void viewRepaint() {
+        mainPanel.repaint();
     }
 
     @Override
-    public void   addLog(String text)
-    {
+    public void printTextToLog(String text) {
         gameLog.append(" " + text + "\n");
-        this.scrollGameLog.getViewport().setViewPosition( new Point( scrollGameLog.getViewport().getViewPosition().x,
-                scrollGameLog.getViewport().getViewPosition().y + 30) );
+        this.scrollGameLog.getViewport().setViewPosition(new Point(scrollGameLog.getViewport().getViewPosition().x,
+                scrollGameLog.getViewport().getViewPosition().y + 30));
     }
 
     @Override
-    public void     scrollPositionManager()
-    {
-        Point newPosition = new Point(controller.getHero().getPosition().x * squareSize - 275,
-                controller.getHero().getPosition().y * squareSize - 275);
+    public void scrollPositionManager() {
+        Point newPosition = new Point(controller.getHero().getPosition().x * SQUARE_SIZE - 275,
+                controller.getHero().getPosition().y * SQUARE_SIZE - 275);
 
-        newPosition.y = newPosition.y <= 0 ? scrollMap.getViewport().getViewPosition().y : newPosition.y;
-        newPosition.x = newPosition.x <= 0 ? scrollMap.getViewport().getViewPosition().x : newPosition.x;
-        this.scrollMap.getViewport().setViewPosition(newPosition);
+        newPosition.y = newPosition.y <= 0 ? mapWithScroll.getViewport().getViewPosition().y : newPosition.y;
+        newPosition.x = newPosition.x <= 0 ? mapWithScroll.getViewport().getViewPosition().x : newPosition.x;
+        this.mapWithScroll.getViewport().setViewPosition(newPosition);
     }
 
     @Override
     public boolean askYesOrNoQuestion(String message) {
-        int dialogButton = JOptionPane.YES_NO_OPTION;
-        int dialogResult = JOptionPane.showConfirmDialog(this, message, "You have a choice", dialogButton);
+        int dialogResult = JOptionPane.showConfirmDialog(this, message, "You have a choice", JOptionPane.YES_NO_OPTION);
 
         return dialogResult == 0;
     }
 
     @Override
-    public void     updateData()
-    {
-        this.stats.updateData();
+    public void updateData() {
+        stats.updateStats();
     }
 
     @Override
-    public String get_Type() { return this.type; }
+    public String getCurrentViewType() {
+        return "gui";
+    }
 
     @Override
-    public void   close()
-    {
+    public void close() {
         setVisible(false);
         dispose();
     }
 
-    /************** Private Methods and classes ********************/
+    private void initScrolls() {
+        GuiMap map = new GuiMap(controller);
+        mapWithScroll = new JScrollPane(map);
+        mapWithScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        mapWithScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        mapWithScroll.setBounds(500, 50, MAP_WITH_SCROLL_WIDTH, MAP_WITH_SCROLL_HEIGHT);
+        mapWithScroll.getViewport().setViewPosition(new Point(controller.getHero().getPosition().x * SQUARE_SIZE, controller.getHero().getPosition().y * SQUARE_SIZE));
+        mapWithScroll.repaint();
 
-    private void   initScrolls()
-    {
-        this.map = new SwingMapPanel(this.controller, this.squareSize);
-        this.scrollMap = new JScrollPane(this.map);
-
-        this.scrollMap.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        this.scrollMap.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        this.scrollMap.setBounds(500, 50, 650, 650);
-        this.scrollMap.getViewport().setViewPosition( new Point(controller.getHero().getPosition().x * 70 - 275, controller.getHero().getPosition().x * 70 - 275) );
-        this.scrollMap.repaint();
-
-        this.gameLog = new SwingGameLog();
-        this.scrollGameLog = new JScrollPane(this.gameLog);
-        this.scrollGameLog.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        this.scrollGameLog.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        this.scrollGameLog.setBounds(50, 565, 325, 400);
-        this.scrollGameLog.repaint();
+        gameLog = new GuiGameLog();
+        scrollGameLog = new JScrollPane(this.gameLog);
+        scrollGameLog.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollGameLog.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollGameLog.setBounds(50, 565, 325, 400);
+        scrollGameLog.repaint();
     }
 
-    private class KeySupporter extends KeyAdapter
-    {
+    private class KeySupporter extends KeyAdapter {
         @Override
         public void keyPressed(KeyEvent e) {
-            if (controller.getHero() != null)
-            {
-                if ( (e.getKeyCode() > 36 && e.getKeyCode() < 41) )
+            if (controller.getHero() != null) {
+                if ((e.getKeyCode() > 36 && e.getKeyCode() < 41))
                     controller.keyPressed(e.getKeyCode());
                 else if (e.getKeyCode() == 49)
                     controller.keyPressed(-2);

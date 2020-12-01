@@ -1,5 +1,6 @@
 package swingy.utils;
 
+import swingy.mvc.Controller;
 import swingy.mvc.models.Artifact;
 import swingy.mvc.models.Hero;
 
@@ -10,7 +11,9 @@ import java.awt.*;
 import java.sql.ResultSet;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.logging.Level;
+import java.util.stream.Collectors;
+
+import static swingy.utils.Constants.GUI_CODE;
 
 public class Utils {
 
@@ -36,7 +39,6 @@ public class Utils {
     }
 
     public static boolean validateHero(Hero hero) {
-        java.util.logging.Logger.getLogger("org.hibernate.validator.internal.util.Version").setLevel(Level.OFF);
         Set<ConstraintViolation<Hero>> violations = validator.validate(hero);
 
         if (violations == null || violations.isEmpty()) {
@@ -44,6 +46,18 @@ public class Utils {
         } else {
             violations.forEach(violation -> System.err.println(violation.getMessage()));
             return false;
+        }
+    }
+
+    public static String validateHeroAndReturnErrorMessages(Hero hero) {
+        Set<ConstraintViolation<Hero>> violations = validator.validate(hero);
+
+        if (violations == null || violations.isEmpty()) {
+            return "";
+        } else {
+            return violations.stream()
+                    .map(ConstraintViolation::getMessage)
+                    .collect(Collectors.joining("\n"));
         }
     }
 
@@ -61,5 +75,48 @@ public class Utils {
                 }
             }
         }
+    }
+
+    public static int getIntegerFromInputWithMappingForUI(Scanner scanner, Controller controller) {
+        int parsedInt;
+        while (true) {
+            String scannedString = scanner.nextLine();
+
+            if ("gui".equals(scannedString)) {
+                return GUI_CODE;
+            } else if (!scannedString.matches("^[0-9]+")) {
+                System.err.println("Enter only number 0 - 9");
+            } else {
+                try {
+                    parsedInt = Integer.parseInt(scannedString);
+                    break;
+                } catch (Exception e) {
+                    System.err.println("Wow, stop doing such bad things, you are a bad one! Type a correct number.");
+                }
+            }
+        }
+
+        switch (parsedInt) {
+            case 1:
+                parsedInt = 38;
+                break;
+            case 2:
+                parsedInt = 37;
+                break;
+            case 3:
+                parsedInt = 39;
+                break;
+            case 4:
+                parsedInt = 40;
+                break;
+            case 0:
+                controller.saveHeroProgress();
+                System.exit(0);
+        }
+        return parsedInt;
+    }
+
+    public static int getMapSize(int heroLevel) {
+        return (heroLevel - 1) * 5 + 10 - (heroLevel % 2);
     }
 }

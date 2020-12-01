@@ -3,175 +3,152 @@ package swingy.mvc.views.console;
 import org.springframework.stereotype.Component;
 import swingy.mvc.Controller;
 import swingy.mvc.models.Enemy;
-import swingy.mvc.views.IView;
+import swingy.mvc.models.Hero;
+import swingy.mvc.views.InterfaceView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
-import static swingy.utils.Constants.CONSOLE_CONTROLS;
+import static swingy.utils.Constants.*;
+import static swingy.utils.Utils.getIntegerFromInputWithMappingForUI;
 
 @Component
-public class ConsoleView implements IView {
+public class ConsoleView implements InterfaceView {
 
-    private static final Scanner scanner = new Scanner(System.in);
+    private final Controller controller;
+    private final Scanner scanner;
+    private final ConsoleHeroPicker consoleHeroPicker;
+    private final List<char[]> currentMap;
 
-    private Controller controller;
-    private ArrayList<char[]> map;
-    private int numStat = 0;
-
-    public ConsoleView(Controller controller) {
+    public ConsoleView(Controller controller, Scanner scanner, ConsoleHeroPicker consoleHeroPicker) {
         this.controller = controller;
-        map = new ArrayList<>();
+        this.scanner = scanner;
+        this.consoleHeroPicker = consoleHeroPicker;
+        currentMap = new ArrayList<>();
     }
 
     @Override
-    public void ChooseHero() {
+    public void pickHero() {
         try {
-            controller.setHero(new ConsoleChooseHero(scanner, controller.getDataManager()).getHero());
+            controller.setHero(consoleHeroPicker.getHero());
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     @Override
-    public void drawGameObjects() {
-        drawMap();
-
+    public void draw() {
+        fillAndPrintMap();
         System.out.println(CONSOLE_CONTROLS);
-        controller.keyPressed(getNiceValue());
+        controller.keyPressed(getIntegerFromInputWithMappingForUI(scanner, controller));
     }
 
     @Override
     public void viewRepaint() {
-        this.drawGameObjects();
+        this.draw();
     }
 
     @Override
     public void scrollPositionManager() {
-
+        //do nothing
     }
 
     @Override
     public void updateData() {
-
+        //do nothing
     }
 
     @Override
     public boolean askYesOrNoQuestion(String message) {
         System.out.println(message + "\n 1 - Yes     2 - No");
 
-        int key = getNiceValue();
-
-        while (key != 38 && key != 37) {
-            System.err.println("Unknown value.");
-            key = getNiceValue();
+        int pressedKey = getIntegerFromInputWithMappingForUI(scanner, controller);
+        while (pressedKey != 38 && pressedKey != 37) {
+            System.err.println("Bad value typed.");
+            pressedKey = getIntegerFromInputWithMappingForUI(scanner, controller);
         }
 
-        return (key == 38);
+        return pressedKey == 38;
     }
 
     @Override
-    public String get_Type() {
+    public String getCurrentViewType() {
         return "console";
     }
 
     @Override
-    public void   addLog(String text) {
-        System.out.println(text);
+    public void printTextToLog(String textToPrint) {
+        System.out.println(textToPrint);
     }
 
     @Override
-    public void   close() {
+    public void close() {
         System.out.print("\033[H\033[2J");
         System.out.flush();
     }
 
-    private void    drawMap() {
-        char[] buff = new char[controller.getSizeMap()];
-        Arrays.fill(buff, '.');
+    private void fillAndPrintMap() {
+        currentMap.clear();
 
-        map.clear();
-        for (int i = 0; i < controller.getSizeMap(); ++i) {
-            map.add(buff.clone());
+        char[] buffer = new char[controller.getMapSize()];
+        Arrays.fill(buffer, '.');
+        for (int i = 0; i < controller.getMapSize(); ++i) {
+            currentMap.add(buffer.clone());
         }
 
-        map.get(controller.getHero().getPosition().y)[controller.getHero().getPosition().x] = 'H';
+        Hero hero = consoleHeroPicker.getHero();
+        currentMap.get(hero.getPosition().y)[hero.getPosition().x] = HERO_SYMBOL;
         for (Enemy enemy : controller.getEnemies()) {
-            map.get(enemy.getPosition().y)[enemy.getPosition().x] = 'E';
+            currentMap.get(enemy.getPosition().y)[enemy.getPosition().x] = ENEMY_SYMBOL;
         }
 
-        numStat = 0;
-        for (char[] str : map) {
-            System.out.println("     ".concat(String.valueOf(str)).concat(this.getStat(numStat++)));
+        int lineNumber = 0;
+        for (char[] line : currentMap) {
+            System.out.println(LEFT_INDENT + String.valueOf(line) + getLineWithStat(lineNumber++));
         }
     }
 
-    private int    getNiceValue() {
-        String str;
-
-        while (true) {
-            str = "";
-
-            while (str.isEmpty()) {
-                try {
-                    str = scanner.nextLine();
-                }
-                catch (Exception e) {
-                    System.err.println("CTRL+D is bad!");
-                    System.exit(0);
-                }
-            }
-
-            if (str.equals("gui")) {
-                return -2;
-            }
-            else if (!str.matches("^[0-9]+")) {
-                System.err.println("Enter nice value !");
-            }
-            else {
-                break;
-            }
-        }
-
-        int value = -3;
-        switch (Integer.parseInt(str)) {
-            case 1: value = 38; break;
-            case 2: value = 37; break;
-            case 3: value = 39; break;
-            case 4: value = 40; break;
-            case -2: value = -2;break;
-
-            case 0:
-                controller.saveHero();
-                System.exit(0);
-        }
-        return value;
-    }
-
-    private String  getStat(int numStat) {
-        if (numStat > 9) {
+    private String getLineWithStat(int lineNumber) {
+        if (lineNumber > 9) {
             return "";
         }
 
-        StringBuilder stat = new StringBuilder("       ");
-
-        switch (numStat) {
-            case 0: stat.append("Name: ").append(controller.getHero().getName());      break;
-            case 1: stat.append("Race: ").append(controller.getHero().getRace());      break;
-            case 2: stat.append("Level: ").append(controller.getHero().getLevel());    break;
-            case 3: stat.append("Location [").append(controller.getHero().getPosition().x).append(", ")
-                    .append(controller.getHero().getPosition().y).append("]");         break;
-            case 4: stat.append("Exp: ").append(controller.getHero().getExp()).append("/")
-                    .append(controller.getHero().getNeccesaryExp());                   break;
-            case 5: stat.append("Attack: ").append(controller.getHero().getAttack());  break;
-            case 6: stat.append("Defense: ").append(controller.getHero().getDefense());break;
-            case 7: stat.append("Hp: ").append(controller.getHero().getHp()).append("/")
-                    .append(controller.getHero().getMaxHp());                          break;
+        Hero hero = controller.getHero();
+        StringBuilder stat = new StringBuilder(STAT_INDENT);
+        switch (lineNumber) {
+            case 0:
+                stat.append("Name: ").append(hero.getName());
+                break;
+            case 1:
+                stat.append("Race: ").append(hero.getRace());
+                break;
+            case 2:
+                stat.append("Level: ").append(hero.getLevel());
+                break;
+            case 3:
+                stat.append("Exp: ").append(hero.getExp()).append("/")
+                        .append(hero.getExpForLevelUp());
+                break;
+            case 4:
+                stat.append("Position [").append(hero.getPosition().x).append(", ")
+                        .append(hero.getPosition().y).append("]");
+                break;
+            case 5:
+                stat.append("Attack: ").append(hero.getAttack());
+                break;
+            case 6:
+                stat.append("Defense: ").append(hero.getDefense());
+                break;
+            case 7:
+                stat.append("Hp: ").append(hero.getHp()).append("/")
+                        .append(hero.getMaxHp());
+                break;
             case 8:
-                if (controller.getHero().getArtifact() != null && !controller.getHero().getArtifact().getType().isEmpty()) {
-                    stat.append("Artifact-").append(controller.getHero().getArtifact().getType()).append(": ")
-                            .append(controller.getHero().getArtifact().getValue());
+                if (hero.getArtifact() != null && !hero.getArtifact().getType().isEmpty()) {
+                    stat.append("Artifact-").append(hero.getArtifact().getType()).append(": ")
+                            .append(hero.getArtifact().getValue());
                 }
                 break;
         }

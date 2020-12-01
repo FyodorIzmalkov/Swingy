@@ -12,8 +12,8 @@ public class HeroFactory {
         switch (race) {
             case "Human":
                 return setDefaultHumanStats(newHero);
-            case "Ork":
-                return setDefaultOrkStats(newHero);
+            case "Orc":
+                return setDefaultOrcStats(newHero);
             case "Elf":
                 return setDefaultElfStats(newHero);
         }
@@ -22,7 +22,7 @@ public class HeroFactory {
     }
 
     private static Hero setDefaultHumanStats(Hero hero) {
-        hero.setRace("human");
+        hero.setRace("Human");
         hero.setLevel(1);
         hero.setExp(0);
         hero.setAttack(7);
@@ -32,8 +32,8 @@ public class HeroFactory {
         return hero;
     }
 
-    private static Hero setDefaultOrkStats(Hero hero) {
-        hero.setRace("ork");
+    private static Hero setDefaultOrcStats(Hero hero) {
+        hero.setRace("Orc");
         hero.setLevel(1);
         hero.setExp(0);
         hero.setAttack(12);
@@ -44,7 +44,7 @@ public class HeroFactory {
     }
 
     private static Hero setDefaultElfStats(Hero hero) {
-        hero.setRace("elf");
+        hero.setRace("Elf");
         hero.setLevel(1);
         hero.setExp(0);
         hero.setAttack(5);

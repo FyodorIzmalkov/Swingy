@@ -9,7 +9,7 @@ public class ConsolePrinter {
 
     public static ConsolePrinter getPrinter() {
         ConsolePrinter consolePrinter = new ConsolePrinter();
-        consolePrinter.stringBuilder.append("Type: \n");
+        consolePrinter.stringBuilder.append("Race: \n");
         return consolePrinter;
     }
 

@@ -34,25 +34,23 @@ public class Hero {
         position.setLocation(position.x + x, position.y + y);
     }
 
-    public int getNeccesaryExp() {
+    public int getExpForLevelUp() {
         return (int) (level * 1000 + Math.pow(level - 1, 2) * 450);
     }
 
     public void setHP(int hp) {
         if (hp < 0) {
             this.hp = 0;
-        } else if (hp > maxHp) {
-            this.hp = maxHp;
         } else {
-            this.hp = hp;
+            this.hp = Math.min(hp, maxHp);
         }
     }
 
-    public int getFinalAttack() {
+    public int getTotalAttack() {
         return (artifact != null && artifact.getType().equals("attack")) ? ((attack + artifact.getValue()) << 2) : attack << 2;
     }
 
-    public int getFinalDefense() {
+    public int geTotalDefense() {
         return (artifact != null && artifact.getType().equals("defense")) ? defense + artifact.getValue() : defense;
     }
 

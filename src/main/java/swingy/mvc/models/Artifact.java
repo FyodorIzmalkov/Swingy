@@ -1,19 +1,11 @@
 package swingy.mvc.models;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+@Data
+@AllArgsConstructor
 public class Artifact {
-    private int value;
-    private String type;
-
-    public Artifact(String type, int value) {
-        this.type = type;
-        this.value = value;
-    }
-
-    public int getValue() {
-        return value;
-    }
-
-    public String getType() {
-        return type;
-    }
+    private final String type;
+    private final int value;
 }

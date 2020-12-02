@@ -1,6 +1,7 @@
 package swingy.database;
 
 import org.springframework.stereotype.Repository;
+import swingy.mvc.models.ArtifactType;
 import swingy.mvc.models.Hero;
 
 import javax.annotation.PostConstruct;
@@ -23,7 +24,7 @@ public class DataManagerImpl implements DataManager {
             statement = connection.createStatement();
             statement.execute("CREATE TABLE IF NOT EXISTS " +
                     "'heroes' ('name' text, 'race' text, 'level' INT, 'exp' INT," +
-                    "'attack' INT, 'defense' INT, 'hp' INT, 'maxHp' INT, 'artifactT' text, 'artifactV' INT);");
+                    "'attack' INT, 'defense' INT, 'hp' INT, 'maxHp' INT, 'artifactType' text, 'artifactValue' INT);");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -46,8 +47,8 @@ public class DataManagerImpl implements DataManager {
 
     @Override
     public void addNewHero(Hero heroToAdd) {
-        String artifactType = heroToAdd.getArtifact() == null ? "" : heroToAdd.getArtifact().getType();
-        int artifactValue = artifactType.equals("") ? 0 : heroToAdd.getArtifact().getValue();
+        String artifactType = heroToAdd.getArtifact() == null ? ArtifactType.NO_ARTIFACT.toString() : heroToAdd.getArtifact().getArtifactType().toString();
+        int artifactValue = artifactType.equals("NO_ARTIFACT") ? 0 : heroToAdd.getArtifact().getValue();
 
         String requestAdd = " VALUES ('" +
                 heroToAdd.getName() + "', '" +
@@ -57,11 +58,11 @@ public class DataManagerImpl implements DataManager {
                 heroToAdd.getAttack() + "," +
                 heroToAdd.getDefense() + "," +
                 heroToAdd.getHp() + "," +
-                heroToAdd.getMaxHp() + ",'" +
+                heroToAdd.getMaxHpWithoutArtifact() + ",'" +
                 artifactType + "'," +
                 artifactValue + ");";
         try {
-            statement.execute("INSERT INTO 'heroes' ('name', 'race', 'level', 'exp', 'attack', 'defense', 'hp', 'maxHP', 'artifactT', 'artifactV')" + requestAdd);
+            statement.execute("INSERT INTO 'heroes' ('name', 'race', 'level', 'exp', 'attack', 'defense', 'hp', 'maxHP', 'artifactType', 'artifactValue')" + requestAdd);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -98,10 +99,10 @@ public class DataManagerImpl implements DataManager {
                 ", exp = " + hero.getExp() +
                 ", attack = " + hero.getAttack() +
                 ", defense = " + hero.getDefense() +
-                ", hp = " + hero.getMaxHp() +
-                ", maxHp = " + hero.getMaxHp() +
-                ", artifactT = '" + (hero.getArtifact() == null ? "" : hero.getArtifact().getType()) +
-                "' , artifactV = " + hero.getArtifact().getValue() +
+                ", hp = " + hero.getMaxHpWithoutArtifact() +
+                ", maxHp = " + hero.getMaxHpWithoutArtifact() +
+                ", artifactType = '" + (hero.getArtifact() == null ? ArtifactType.NO_ARTIFACT.toString() : hero.getArtifact().getArtifactType().toString()) +
+                "' , artifactValue = " + hero.getArtifact().getValue() +
                 " WHERE name = '" + hero.getName() + "';";
 
         try {

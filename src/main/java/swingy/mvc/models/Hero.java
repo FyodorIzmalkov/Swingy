@@ -27,7 +27,7 @@ public class Hero {
     private Point position = new Point(0, 0);
     @NotNull(message = "Position cant be null")
     private Point oldPosition = new Point(0, 0);
-    private Artifact artifact;
+    private Artifact artifact = new Artifact(ArtifactType.NO_ARTIFACT, 0);
 
     public void move(int x, int y) {
         oldPosition.setLocation(position.x, position.y);
@@ -42,23 +42,31 @@ public class Hero {
         if (hp < 0) {
             this.hp = 0;
         } else {
-            this.hp = Math.min(hp, maxHp);
+            this.hp = Math.min(hp, getMaxHp());
         }
     }
 
-    public int getTotalAttack() {
-        return (artifact != null && artifact.getType().equals("attack")) ? ((attack + artifact.getValue()) << 2) : attack << 2;
+    public int getMaxHp() {
+        return ArtifactType.HELM == artifact.getArtifactType() ? this.maxHp + artifact.getValue() : this.maxHp;
     }
 
-    public int geTotalDefense() {
-        return (artifact != null && artifact.getType().equals("defense")) ? defense + artifact.getValue() : defense;
+    public int getMaxHpWithoutArtifact() {
+        return this.maxHp;
+    }
+
+    public int getTotalAttack() {
+        return (artifact != null && ArtifactType.WEAPON == artifact.getArtifactType()) ? attack + artifact.getValue() : attack;
+    }
+
+    public int getTotalDefense() {
+        return (artifact != null && ArtifactType.ARMOR == artifact.getArtifactType()) ? defense + artifact.getValue() : defense;
     }
 
     @Override
     public String toString() {
         return "\n Race: ".concat(race)
-                .concat("\n Attack: ").concat(String.valueOf(attack))
-                .concat("\n Defense: ").concat(String.valueOf(defense))
-                .concat("\n HP: ").concat(String.valueOf(hp));
+                .concat("\n Attack: ").concat(String.valueOf(getTotalAttack()))
+                .concat("\n Defense: ").concat(String.valueOf(getTotalDefense()))
+                .concat("\n HP: ").concat(String.valueOf(getHp()));
     }
 }

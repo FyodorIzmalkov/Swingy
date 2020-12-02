@@ -2,13 +2,14 @@ package swingy.mvc.views.picker;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import swingy.database.DataManager;
 import swingy.mvc.Controller;
 import swingy.mvc.views.InterfaceView;
 import swingy.mvc.views.console.ConsoleHeroPicker;
 import swingy.mvc.views.console.ConsoleView;
-import swingy.mvc.views.swing.MainPanel;
-import swingy.mvc.views.swing.SwingHeroPicker;
-import swingy.mvc.views.swing.SwingView;
+import swingy.mvc.views.gui.GuiHeroPicker;
+import swingy.mvc.views.gui.GuiView;
+import swingy.mvc.views.gui.MainPanel;
 
 import java.util.Scanner;
 
@@ -17,11 +18,16 @@ import java.util.Scanner;
 public class ViewPicker {
     private final Scanner scanner;
     private final ConsoleHeroPicker consoleHeroPicker;
-    private final SwingHeroPicker swingHeroPicker;
-    private final MainPanel mainPanel;
+    private final DataManager dataManager;
 
 
     public InterfaceView getInterfaceView(String viewName, Controller controller) {
-        return "gui".equals(viewName) ? new SwingView(controller, swingHeroPicker, mainPanel) : new ConsoleView(controller, scanner, consoleHeroPicker);
+        MainPanel mainPanel = getMainPanel();
+        GuiHeroPicker guiHeroPicker = new GuiHeroPicker(mainPanel, dataManager);
+        return "gui".equals(viewName) ? new GuiView(controller, guiHeroPicker, mainPanel) : new ConsoleView(controller, scanner, consoleHeroPicker);
+    }
+
+    private static MainPanel getMainPanel() {
+        return new MainPanel();
     }
 }

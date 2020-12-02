@@ -2,6 +2,8 @@ package swingy.utils;
 
 import swingy.mvc.Controller;
 import swingy.mvc.models.Artifact;
+import swingy.mvc.models.ArtifactType;
+import swingy.mvc.models.Enemy;
 import swingy.mvc.models.Hero;
 
 import javax.validation.ConstraintViolation;
@@ -13,7 +15,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static swingy.utils.Constants.GUI_CODE;
+import static swingy.utils.Constants.CHANGE_VIEW_CODE;
 
 public class Utils {
 
@@ -26,7 +28,7 @@ public class Utils {
         return Hero.builder()
                 .name(resultSet.getString("name"))
                 .race(resultSet.getString("race"))
-                .artifact(new Artifact(resultSet.getString("artifactT"), resultSet.getInt("artifactV")))
+                .artifact(new Artifact(ArtifactType.valueOf(resultSet.getString("artifactType")), resultSet.getInt("artifactValue")))
                 .attack(resultSet.getInt("attack"))
                 .defense(resultSet.getInt("defense"))
                 .exp(resultSet.getInt("exp"))
@@ -83,7 +85,7 @@ public class Utils {
             String scannedString = scanner.nextLine();
 
             if ("gui".equals(scannedString)) {
-                return GUI_CODE;
+                return CHANGE_VIEW_CODE;
             } else if (!scannedString.matches("^[0-9]+")) {
                 System.err.println("Enter only number 0 - 9");
             } else {
@@ -118,5 +120,21 @@ public class Utils {
 
     public static int getMapSize(int heroLevel) {
         return (heroLevel - 1) * 5 + 10 - (heroLevel % 2);
+    }
+
+    public static String getPathToResources() {
+        return System.getProperty("user.dir").concat("/src/main/resources/");
+    }
+
+    public static int getArtifactValue(ArtifactType artifactType, Enemy enemy) {
+        if (ArtifactType.WEAPON == artifactType) {
+            return enemy.getAttack() + 1;
+        }
+
+        if (ArtifactType.ARMOR == artifactType) {
+            return (enemy.getDefense() * 2) + 1;
+        }
+
+        return (enemy.getAttack() + enemy.getDefense()) * 3;
     }
 }

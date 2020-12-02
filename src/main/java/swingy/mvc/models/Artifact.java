@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class Artifact {
-    private final String type;
+    private final ArtifactType artifactType;
     private final int value;
 }

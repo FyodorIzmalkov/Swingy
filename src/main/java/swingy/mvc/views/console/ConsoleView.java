@@ -2,6 +2,7 @@ package swingy.mvc.views.console;
 
 import org.springframework.stereotype.Component;
 import swingy.mvc.Controller;
+import swingy.mvc.models.ArtifactType;
 import swingy.mvc.models.Enemy;
 import swingy.mvc.models.Hero;
 import swingy.mvc.views.InterfaceView;
@@ -98,7 +99,11 @@ public class ConsoleView implements InterfaceView {
             currentMap.add(buffer.clone());
         }
 
-        Hero hero = consoleHeroPicker.getHero();
+        Hero hero = controller.getHero();
+        if (hero == null) {
+            hero = consoleHeroPicker.getHero();
+        }
+
         currentMap.get(hero.getPosition().y)[hero.getPosition().x] = HERO_SYMBOL;
         for (Enemy enemy : controller.getEnemies()) {
             currentMap.get(enemy.getPosition().y)[enemy.getPosition().x] = ENEMY_SYMBOL;
@@ -136,18 +141,18 @@ public class ConsoleView implements InterfaceView {
                         .append(hero.getPosition().y).append("]");
                 break;
             case 5:
-                stat.append("Attack: ").append(hero.getAttack());
+                stat.append("Attack: ").append(hero.getTotalAttack());
                 break;
             case 6:
-                stat.append("Defense: ").append(hero.getDefense());
+                stat.append("Defense: ").append(hero.getTotalDefense());
                 break;
             case 7:
                 stat.append("Hp: ").append(hero.getHp()).append("/")
                         .append(hero.getMaxHp());
                 break;
             case 8:
-                if (hero.getArtifact() != null && !hero.getArtifact().getType().isEmpty()) {
-                    stat.append("Artifact-").append(hero.getArtifact().getType()).append(": ")
+                if (hero.getArtifact() != null && ArtifactType.NO_ARTIFACT != hero.getArtifact().getArtifactType()) {
+                    stat.append("Artifact-").append(hero.getArtifact().getArtifactType().toString()).append(": ")
                             .append(hero.getArtifact().getValue());
                 }
                 break;

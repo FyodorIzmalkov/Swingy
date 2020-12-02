@@ -2,7 +2,7 @@ package swingy;
 
 import org.springframework.context.annotation.*;
 import swingy.mvc.Controller;
-import swingy.mvc.views.swing.MainPanel;
+import swingy.mvc.views.gui.MainPanel;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -13,7 +13,7 @@ import java.util.Set;
 @PropertySource("classpath:application.properties")
 @ComponentScan(basePackages = "swingy")
 public class Main {
-    private static final Set<String> consoleVariants = new HashSet<>(Arrays.asList("gui", "console"));
+    private static final Set<String> viewVariants = new HashSet<>(Arrays.asList("gui", "console"));
 
     public static void main(String[] args) {
         if (args.length != 1) {
@@ -23,7 +23,7 @@ public class Main {
                 AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(Main.class);
                 Controller controller = context.getBean(Controller.class);
 
-                if (!consoleVariants.contains(args[0])) {
+                if (!viewVariants.contains(args[0])) {
                     System.err.println("You can use with only one of those arguments: gui or console.");
                     System.exit(1);
                 }

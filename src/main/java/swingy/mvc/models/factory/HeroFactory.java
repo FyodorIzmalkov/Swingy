@@ -25,7 +25,7 @@ public class HeroFactory {
         hero.setRace("Human");
         hero.setLevel(1);
         hero.setExp(0);
-        hero.setAttack(7);
+        hero.setAttack(17);
         hero.setDefense(7);
         hero.setMaxHp(150);
         hero.setHP(150);
@@ -36,7 +36,7 @@ public class HeroFactory {
         hero.setRace("Orc");
         hero.setLevel(1);
         hero.setExp(0);
-        hero.setAttack(12);
+        hero.setAttack(24);
         hero.setDefense(2);
         hero.setMaxHp(200);
         hero.setHP(200);
@@ -47,7 +47,7 @@ public class HeroFactory {
         hero.setRace("Elf");
         hero.setLevel(1);
         hero.setExp(0);
-        hero.setAttack(5);
+        hero.setAttack(12);
         hero.setDefense(12);
         hero.setMaxHp(130);
         hero.setHP(130);

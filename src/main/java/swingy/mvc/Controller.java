@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import swingy.database.DataManager;
 import swingy.mvc.models.Artifact;
+import swingy.mvc.models.ArtifactType;
 import swingy.mvc.models.Enemy;
 import swingy.mvc.models.Hero;
 import swingy.mvc.views.InterfaceView;
@@ -16,6 +17,9 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import static swingy.mvc.models.factory.EnemyFactory.createNewEnemy;
+import static swingy.utils.Constants.CHANGE_VIEW_CODE;
+import static swingy.utils.Constants.artifactTypes;
+import static swingy.utils.Utils.getArtifactValue;
 
 @Component
 public class Controller {
@@ -97,7 +101,7 @@ public class Controller {
                 }
                 break;
 
-            case -2:
+            case CHANGE_VIEW_CODE:
                 try {
                     String newType = currentView.getCurrentViewType().equals("gui") ? "console" : "gui";
                     currentView.close();
@@ -123,9 +127,9 @@ public class Controller {
     }
 
     private void initGame() {
-        deployEnemies();
         hero.getPosition().setLocation(mapSize >> 1, mapSize >> 1);
         hero.setHP(hero.getMaxHp());
+        deployEnemies();
     }
 
     private boolean simulateFight(Enemy enemy) {
@@ -166,14 +170,14 @@ public class Controller {
             enemy.setHp(0);
             currentView.printTextToLog("Nice! You made a critical hit!");
         } else {
-            hero.setHP(hero.getHp() - (enemy.getAttack() << 2) + hero.geTotalDefense());
+            hero.setHP(hero.getHp() - (enemy.getAttack() << 2) + hero.getTotalDefense());
             if (checkIfHeroDied()) {
                 return;
             }
 
             enemy.setHp(enemy.getHp() - Math.max(1, hero.getTotalAttack() - enemy.getDefense()));
 
-            int receivedDamage = (enemy.getAttack() << 2) - hero.geTotalDefense();
+            int receivedDamage = (enemy.getAttack() << 2) - hero.getTotalDefense();
             currentView.printTextToLog("You caused " + (hero.getTotalAttack() - enemy.getDefense())
                     + " damage to the enemy !\n" + (receivedDamage < 0 ? " Blocked all incoming damage" : " Received " + receivedDamage) + " damage.");
         }
@@ -182,10 +186,10 @@ public class Controller {
     private void checkForLevelUpAndLoot(Enemy enemy) {
         if (hero.getExp() >= hero.getExpForLevelUp()) {
             currentView.printTextToLog("You have reached new level ! Your attributes have increased !");
-            hero.setMaxHp(hero.getMaxHp() + (4 * hero.getLevel()));
+            hero.setMaxHp(hero.getMaxHp() + (5 * hero.getLevel()));
             hero.setHP(hero.getMaxHp());
-            hero.setAttack(hero.getAttack() + (hero.getLevel() * 2));
-            hero.setDefense(hero.getDefense() + (hero.getLevel()));
+            hero.setAttack(hero.getAttack() + (hero.getLevel() * 2 + 1));
+            hero.setDefense(hero.getDefense() + (hero.getLevel() + 1));
             hero.setLevel(hero.getLevel() + 1);
             mapSize = Utils.getMapSize(hero.getLevel());
         }
@@ -214,7 +218,7 @@ public class Controller {
                 hero.setHP(Math.min((hero.getHp() + healthIncrease), hero.getMaxHp()));
                 currentView.printTextToLog("You have found a health elixir, health increases by + " + healthIncrease + " hp !");
             } else {
-                getRandomArtifacts(enemy);
+                getRandomArtifact(enemy);
             }
         }
     }
@@ -222,17 +226,17 @@ public class Controller {
     private void deployEnemies() {
         enemies = new ArrayList<>();
 
-        for (int i = Math.max(8, random.nextInt(mapSize)); i > 0; i--) {
+        for (int i = Math.max((7 + hero.getLevel() * 2), random.nextInt(mapSize)); i > 0; i--) {
             enemies.add(createNewEnemy(mapSize, enemies, hero));
         }
     }
 
-    private void getRandomArtifacts(Enemy enemy) {
-        String artifact = random.nextInt(2) == 0 ? "attack" : "defense";
-        int paramValue = (("attack".equals(artifact) ? enemy.getAttack() : enemy.getDefense()) >> 1) + 1;
+    private void getRandomArtifact(Enemy enemy) {
+        ArtifactType artifactType = artifactTypes[random.nextInt(3)];
+        int artifactValue = getArtifactValue(artifactType, enemy);
 
-        if (currentView.askYesOrNoQuestion("Found an " + artifact + " artifact (" + paramValue + ") do you want to pick it up ?")) {
-            hero.setArtifact(new Artifact(artifact, paramValue));
+        if (currentView.askYesOrNoQuestion("Found an " + artifactType + " artifact (" + artifactValue + ") do you want to pick it up ?")) {
+            hero.setArtifact(new Artifact(artifactType, artifactValue));
             currentView.printTextToLog("New artifact has been equipped");
         }
     }
